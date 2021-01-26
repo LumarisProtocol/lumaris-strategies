@@ -10,7 +10,7 @@ import "./interfaces/ICakePool.sol";
 import "./interfaces/IPancakeSwapRouter.sol";
 import "./interfaces/IUniswapV2Router02.sol";
 
-contract CakePool is BEP20 {
+contract CakeLP is BEP20 {
 
     using SafeMath for uint256;
     using SafeBEP20 for IBEP20;
@@ -23,10 +23,12 @@ contract CakePool is BEP20 {
     ICakePool public cakePool;
 
     IBEP20 public wbnb = IBEP20(0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c);
+    IBEP20 public cake = IBEP20(0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82);
     address public pancakeSwapRouter = address(0x05fF2B0DB69458A0750badebc4f9e13aDd608C7F);
     IUniswapV2Router02 public uniswapRouter;
+    uint256 public pid;
     
-    constructor(string memory _name, string memory _alias, IBEP20 _tokenMain, IBEP20 _token, IController _controller, IMasterChef _masterchef, ICakePool _cakePool) 
+    constructor(string memory _name, string memory _alias, IBEP20 _tokenMain, IBEP20 _token, IController _controller, IMasterChef _masterchef, ICakePool _cakePool, uint256 _pid) 
     BEP20(
         string(abi.encodePacked(_name, IBEP20(_token).name())),
         string(abi.encodePacked(_alias, IBEP20(_token).symbol()))
@@ -38,6 +40,7 @@ contract CakePool is BEP20 {
         controller = _controller;
         cakePool = _cakePool;
         uniswapRouter = IUniswapV2Router02(masterchef.router());
+        pid = _pid;
     }
 
     function sortTokens(address tokenA, address tokenB) internal pure returns (address token0, address token1) {
@@ -60,19 +63,19 @@ contract CakePool is BEP20 {
     }  
 
     function _convertCakeToWBNB() internal {
-        uint256 _amount = token.balanceOf(address(this));
+        uint256 _amount = cake.balanceOf(address(this));
         if(_amount > 0){
-            token.safeApprove(pancakeSwapRouter, 0);
-            token.safeApprove(pancakeSwapRouter, _amount);
+            cake.safeApprove(pancakeSwapRouter, 0);
+            cake.safeApprove(pancakeSwapRouter, _amount);
             address[] memory path = new address[](2);
-            path[0] = address(token);
+            path[0] = address(cake);
             path[1] = address(wbnb);
             IPancakeSwapRouter(pancakeSwapRouter).swapExactTokensForTokens(_amount, uint256(0), path, address(this), now.add(1800));
         }
     }
 
     function _convertToken() internal {
-        uint256 _amount = token.balanceOf(address(this));
+        uint256 _amount = cake.balanceOf(address(this));
         if(_amount > 0){
             _convertCakeToWBNB();
             uint256 amountWBNB = wbnb.balanceOf(address(this));
@@ -93,39 +96,36 @@ contract CakePool is BEP20 {
                 now.add(1800)// uint deadline
             );
         }
-        compound();
     }
 
-    function enterStaking(uint256 _amount) internal {
+    function _deposit(uint256 _amount) internal {
         token.safeApprove(address(cakePool), _amount);
-        cakePool.enterStaking(_amount);
+        cakePool.deposit(pid, _amount);
     }
 
-    function compound() internal {
-        uint256 amount = cakePool.pendingCake(0, address(this));
-        token.safeApprove(address(cakePool), amount);
-        cakePool.enterStaking(amount);
+    function claim() public {
+        cakePool.deposit(pid, 0);
+        _convertToken();
     }
 
     function deposit(uint256 _amount, address _ref) public {
         controller.registerMember(msg.sender, _ref);
         _mint(msg.sender, _amount);
         token.safeTransferFrom(address(msg.sender), address(this), _amount);
-        compound();
-        enterStaking(_amount);
+        _deposit(_amount);
         _convertToken();
     }
 
     function withdraw(uint256 _amount) public {
         require(balanceOf(msg.sender) >= _amount, "without balance");
         _burn(msg.sender, _amount);
-        cakePool.leaveStaking(_amount);
+        cakePool.withdraw(pid, _amount);
         token.safeTransfer(msg.sender, _amount);
         _convertToken();
     }
 
     function emergencyWithdraw() onlyOwner public {
-        cakePool.emergencyWithdraw(0);
+        cakePool.emergencyWithdraw(pid);
         _convertToken();
     }
 
@@ -136,7 +136,7 @@ contract CakePool is BEP20 {
     }    
 
     function pendingCake() external view returns (uint256) {
-        return cakePool.pendingCake(0, address(this));
+        return cakePool.pendingCake(pid, address(this));
     }
 
 }
