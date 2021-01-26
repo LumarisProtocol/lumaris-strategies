@@ -15,4 +15,6 @@ interface ICakePool {
 
     function pendingCake(uint256 _pid, address _user) external view returns (uint256);
 
+    function pendingFuel(uint256 _pid, address _user) external view returns (uint256);
+
 }

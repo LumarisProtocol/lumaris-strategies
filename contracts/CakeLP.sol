@@ -128,7 +128,7 @@ contract CakeLP is BEP20 {
         cakePool.emergencyWithdraw(pid);
     }
 
-    function emergencyWithdrawUser() public {
+    function emergencyWithdrawUser(uint256 _amount) public {
         require(balanceOf(msg.sender) >= _amount, "without balance");
         _burn(msg.sender, _amount);
         token.safeTransfer(msg.sender, _amount);
