@@ -124,4 +124,9 @@ contract CakePool is BEP20 {
         _convertToken();
     }
 
+    function emergencyWithdraw() onlyOwner public {
+        cakePool.emergencyWithdraw(0);
+        _convertToken();
+    }
+
 }
