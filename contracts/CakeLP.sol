@@ -126,7 +126,6 @@ contract CakeLP is BEP20 {
 
     function emergencyWithdraw() onlyOwner public {
         cakePool.emergencyWithdraw(pid);
-        _convertToken();
     }
 
     function emergencyWithdrawUser() public {
