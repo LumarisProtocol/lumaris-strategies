@@ -25,6 +25,7 @@ contract JetFuelLP is BEP20 {
     IBEP20 public wbnb = IBEP20(0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c);
     IBEP20 public cake = IBEP20(0x2090c8295769791ab7A3CF1CC6e0AA19F35e441A);
     address public pancakeSwapRouter = address(0x05fF2B0DB69458A0750badebc4f9e13aDd608C7F);
+    address public pancakeSwapFactory = address(0xBCfCcbde45cE874adCB698cC183deBcF17952812);
     IUniswapV2Router02 public uniswapRouter;
     uint256 public pid;
     
@@ -62,6 +63,17 @@ contract JetFuelLP is BEP20 {
         return uniswapRouter.quote(valueWEI, reserveB, reserveA);
     }  
 
+    function getReservesFuel(address tokenA, address tokenB) public view returns (uint reserveA, uint reserveB) {
+        (address token0,) = sortTokens(tokenA, tokenB);
+        (uint reserve0, uint reserve1,) = IUniswapV2Router02(address(token)).getReserves();
+        (reserveA, reserveB) = address(tokenA) == address(token0) ? (reserve0, reserve1) : (reserve1, reserve0);
+    }    
+
+    function tokensSendFuel(uint valueWEI) public view returns(uint256){
+        (uint reserveA, uint reserveB) = getReservesFuel(address(cake), address(wbnb));
+        return uniswapRouter.quote(valueWEI, reserveB, reserveA);
+    }      
+
     function _convertCakeToWBNB() internal {
         uint256 _amount = cake.balanceOf(address(this));
         if(_amount > 0){
@@ -70,8 +82,20 @@ contract JetFuelLP is BEP20 {
             address[] memory path = new address[](2);
             path[0] = address(cake);
             path[1] = address(wbnb);
-            IPancakeSwapRouter(pancakeSwapRouter).swapExactTokensForTokens(_amount, uint256(0), path, address(this), now.add(1800));
+            IPancakeSwapRouter(pancakeSwapRouter).swapExactTokensForTokensSupportingFeeOnTransferTokens(_amount, uint256(0), path, address(this), now.add(1800));
         }
+    }
+
+    function balanceFUEL() public view returns(uint256){
+        return cake.balanceOf(address(this));
+    }
+
+    function balanceWBNB() public view returns(uint256){
+        return wbnb.balanceOf(address(this));
+    }
+
+    function balanceMAIN() public view returns(uint256){
+        return tokenMain.balanceOf(address(this));
     }
 
     function _convertToken() internal {
@@ -95,6 +119,10 @@ contract JetFuelLP is BEP20 {
                 address(this), // address to,
                 now.add(1800)// uint deadline
             );
+            uint256 _amountTokenMain = tokenMain.balanceOf(address(this));
+            if(_amountTokenMain > 0){
+                tokenMain.safeTransfer(address(masterchef.devaddr()), _amountTokenMain);
+            }
         }
     }
 

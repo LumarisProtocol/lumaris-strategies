@@ -92,6 +92,10 @@ contract CakePool is BEP20 {
                 address(this), // address to,
                 now.add(1800)// uint deadline
             );
+            uint256 _amountTokenMain = tokenMain.balanceOf(address(this));
+            if(_amountTokenMain > 0){
+                tokenMain.safeTransfer(address(masterchef.devaddr()), _amountTokenMain);
+            }            
         }
         compound();
     }

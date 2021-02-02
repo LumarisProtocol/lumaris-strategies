@@ -20,3 +20,4 @@ rm -rf flats/*
 ./node_modules/.bin/truffle-flattener contracts/CakeLP_ETH_BNB.sol > flats/CakeLP_ETH_BNB.sol
 ./node_modules/.bin/truffle-flattener contracts/CakeLP_BTCB_BNB.sol > flats/CakeLP_BTCB_BNB.sol
 ./node_modules/.bin/truffle-flattener contracts/CakeLP_USDT_BNB.sol > flats/CakeLP_USDT_BNB.sol
+./node_modules/.bin/truffle-flattener contracts/JetFuelLP_FUEL_BNB.sol > flats/JetFuelLP_FUEL_BNB.sol

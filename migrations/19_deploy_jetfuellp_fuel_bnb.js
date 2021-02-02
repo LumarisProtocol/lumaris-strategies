@@ -1,17 +1,17 @@
-const LP = artifacts.require('./CakeLP_USDT_BUSD.sol')
+const LP = artifacts.require('./JetFuelLP_FUEL_BNB.sol')
 
 module.exports = async function (deployer) {
-    if (parseInt(process.env.DEPLOY_CAKE) == 1) {
+    if (parseInt(process.env.DEPLOY_JETFUEL) == 1) {
         await deployer.deploy(
             LP,
             process.env.NAME,
             process.env.ALIAS,
             process.env.TOKEN_MAIN,
-            "0xc15fa3E22c912A276550F3E5FE3b0Deb87B55aCd", //tokenLP
+            "0x3763A3263CEaca5e7Cc1Bc22A43920bAd9f743Cd", //tokenLP
             process.env.CONTROLLER,
             process.env.MASTERCHEF,
-            process.env.CAKE_POOL,
-            11
+            process.env.JETFUEL_POOL,
+            6
         )
     }
 }
